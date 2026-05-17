@@ -1,0 +1,5 @@
+# Virtual environment
+venv/
+.env/
+local_medallion_lakehouse/
+.env
