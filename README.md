@@ -29,7 +29,7 @@ architecture-medallion/
 ├── pipeline_medallion.py      # Script de démonstration autonome (sans interface)
 ├── requirements.txt           # Dépendances Python
 ├── README.md                  # Ce guide d'accueil et d'explications
-├── test_connection.py # Guide de résolution des erreurs de connexion API
+├── test_connection.py         # Guide de résolution des erreurs de connexion API
 ├── installation_ollama_windows.md # Guide d'installation d'Ollama pour l'usage local
 └── local_medallion_lakehouse/ # Dossier de base créé automatiquement (exclu de Git)
     ├── bronze/                # Fichiers sources bruts (CSV, TXT)
@@ -112,3 +112,8 @@ Analyse de tables : Posez une question sur vos ventes et l'IA génèrera et exé
 RAG Documentaire (FAQ Interne) : Interrogez votre base de connaissances. L'application cherche les morceaux de textes pertinents dans FAISS et sollicite GPT-4o-mini pour formuler une réponse fiable et sourcée.
 
 Lignage (Lineage) : L'application affiche pour chaque réponse la traçabilité complète de l'information (de la réponse Gold ➔ vers le chunk Silver ➔ jusqu'au fichier Bronze d'origine).
+
+👤 Auteur
+Diaraye BARRY
+Senior Data Scientist & Machine Learning Engineer
+Expertise en Architectures LLM, MLOps et Stratégies Data.
