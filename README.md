@@ -18,7 +18,7 @@ Cette capture montre l'espace de travail de l'Onglet 1 : profilage automatique d
 Cette capture montre l'Onglet 2 : chargement des données nettoyées de la couche Silver, génération de requêtes complexes d'agrégation métier (ex: "Moyenne du prix par catégorie") via le copilote et sauvegarde directe dans la couche Gold au format CSV.
 
 ## 📁 Structure du Projet
-architecture-medallion/
+ architecture-medallion/
 ├── app.py                         # Application principale Streamlit (Interface Studio)
 ├── pipeline_medallion.py          # Script de démonstration autonome (sans interface)
 ├── test_connection.py             # Script de diagnostic pour la clé et la connexion OpenAI
