@@ -27,7 +27,7 @@ HISTORY_LOG_PATH = os.path.join(BASE_DIR, "modification_history.json")
 
 # --- INITIALISATION DE L'INTERFACE STREAMLIT ---
 st.set_page_config(
-    page_title="Medallion Studio (OpenAI Cloud)", 
+    page_title="Medallion Studio - Diaraye Barry", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -60,6 +60,9 @@ st.markdown("""
 # --- CONFIGURATION DE L'AUTHENTIFICATION OPENAI ---
 with st.sidebar:
     st.title("🏗️ Studio OpenAI Cloud")
+    # Ajout du profil dans la barre latérale
+    st.markdown("👤 **Développé par :**")
+    st.markdown("🚀 **Diaraye Barry**\n*Data Scientist*")
     st.markdown("---")
     
     # Récupération de la clé API
@@ -205,7 +208,10 @@ with st.sidebar:
                 st.code(item["code"], language="python")
             st.markdown("---")
 
-st.title("🏗️ Medallion Lakehouse Studio (Production Ready)")
+# Titre principal avec la signature de Diaraye Barry
+st.title("🏗 *Medallion Lakehouse Studio*")
+st.caption("🚀 Conçu et développé par **Diaraye Barry** | *Data Scientist*")
+st.markdown("---")
 
 # --- VUES DU LIGNAGE DYNAMIQUE ---
 st.markdown("### 📊 Lignage Dynamique du Lakehouse")
@@ -353,7 +359,7 @@ with tab1:
                     
                     prompt = (
                         f"Tu es un Data Engineer expert spécialisé dans Pandas.\n"
-                        f"Tu dois écrire du code Python pour transformer un DataFrame nommé `df` selon l'instruction suivante.\n"
+                        f"Tu devez écrire du code Python pour transformer un DataFrame nommé `df` selon l'instruction suivante.\n"
                         f"Instruction : \"{user_instruction}\"\n\n"
                         f"Schéma actuel :\n{schema_info}\n\n"
                         f"Consignes STRICTES :\n"
