@@ -7,13 +7,13 @@ Voici à quoi ressemble l'interface utilisateur interactive développée avec St
 
 📥 1. Ingestion de données & Nettoyage par Copilote (Bronze ➔ Silver)
 
-![Bronze ➔ Silver ](img/demo1.png)
+![Bronze ➔ Silver ](assets/demo1.png)
 
 Cette capture montre l'espace de travail de l'Onglet 1 : profilage automatique des données (lignes, colonnes, types, valeurs manquantes, doublons), génération de code de nettoyage Pandas par l'IA et comparaison Avant/Après en temps réel.
 
 📈 2. Agrégations Décisionnelles & Tables Métiers (Silver ➔ Gold)
 
-![Silver ➔ Gold ](img/demo2.png)
+![Silver ➔ Gold ](assets/demo2.png)
 
 Cette capture montre l'Onglet 2 : chargement des données nettoyées de la couche Silver, génération de requêtes complexes d'agrégation métier (ex: "Moyenne du prix par catégorie") via le copilote et sauvegarde directe dans la couche Gold au format CSV.
 
