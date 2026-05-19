@@ -18,7 +18,9 @@ Cette capture montre l'espace de travail de l'Onglet 1 : profilage automatique d
 Cette capture montre l'Onglet 2 : chargement des données nettoyées de la couche Silver, génération de requêtes complexes d'agrégation métier (ex: "Moyenne du prix par catégorie") via le copilote et sauvegarde directe dans la couche Gold au format CSV.
 
 ## 📁 Structure du Projet
- architecture-medallion/
+ 
+```bash
+architecture-medallion/
 ├── app.py                         # Application principale Streamlit (Interface Studio)
 ├── pipeline_medallion.py          # Script de démonstration autonome (sans interface)
 ├── test_connection.py             # Script de diagnostic pour la clé et la connexion OpenAI
@@ -29,7 +31,7 @@ Cette capture montre l'Onglet 2 : chargement des données nettoyées de la couch
 ├── docs/                          # Documentations additionnelles et guides
 │   └── installation_ollama_windows.md  # Guide pas-à-pas pour l'usage local d'Ollama
 │
-├── img/                           # Captures d'écran et assets visuels pour le README
+├── assets/                           # Captures d'écran et assets visuels pour le README
 │   ├── demo1.png                  # Capture de la transition Bronze ➔ Silver
 │   └── demo2.png                  # Capture de la transition Silver ➔ Gold
 │
@@ -37,6 +39,7 @@ Cette capture montre l'Onglet 2 : chargement des données nettoyées de la couch
     ├── bronze/                    # Couche brute : Fichiers sources (CSV, TXT) après ingestion
     ├── silver/                    # Couche nettoyée : Données structurées et fragments textuels (JSON, CSV)
     └── gold/                      # Couche décisionnelle : Index FAISS, archives d'embeddings et tables agrégées
+```
 
 ### 🔑 Étape 1 : Configuration de la Clé API OpenAI
 
