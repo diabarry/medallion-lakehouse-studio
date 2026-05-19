@@ -354,23 +354,28 @@ with tab1:
         if user_instruction:
             if "last_instruction" not in st.session_state or st.session_state.last_instruction != user_instruction:
                 with st.spinner("OpenAI génère le code de transformation optimal..."):
-                    llm = ChatOpenAI(model=selected_chat_model, temperature=0)
-                    schema_info = f"Colonnes : {list(st.session_state.active_df.columns)}\nTypes :\n{st.session_state.active_df.dtypes.to_string()}"
-                    
-                    prompt = (
-                        f"Tu es un Data Engineer expert spécialisé dans Pandas.\n"
-                        f"Tu devez écrire du code Python pour transformer un DataFrame nommé `df` selon l'instruction suivante.\n"
-                        f"Instruction : \"{user_instruction}\"\n\n"
-                        f"Schéma actuel :\n{schema_info}\n\n"
-                        f"Consignes STRICTES :\n"
-                        f"1. Renvoie UNIQUEMENT le code Python brut à exécuter, pas de texte de préambule, pas de blabla, juste le bloc de code.\n"
-                        f"2. Ne réinitialise pas le dataframe avec pd.DataFrame().\n"
-                        f"3. Modifie le dataframe directement (ex: df = df.drop_duplicates() ou df.fillna(0, inplace=True)).\n"
-                    )
-                    
-                    response = llm.invoke(prompt)
-                    st.session_state.suggested_code = clean_generated_code(response.content)
-                    st.session_state.last_instruction = user_instruction
+                    try:
+                        llm = ChatOpenAI(model=selected_chat_model, temperature=0)
+                        schema_info = f"Colonnes : {list(st.session_state.active_df.columns)}\nTypes :\n{st.session_state.active_df.dtypes.to_string()}"
+                        
+                        prompt = (
+                            f"Tu es un Data Engineer expert spécialisé dans Pandas.\n"
+                            f"Tu devez écrire du code Python pour transformer un DataFrame nommé `df` selon l'instruction suivante.\n"
+                            f"Instruction : \"{user_instruction}\"\n\n"
+                            f"Schéma actuel :\n{schema_info}\n\n"
+                            f"Consignes STRICTES :\n"
+                            f"1. Renvoie UNIQUEMENT le code Python brut à exécuter, pas de texte de préambule, pas de blabla, juste le bloc de code.\n"
+                            f"2. Ne réinitialise pas le dataframe avec pd.DataFrame().\n"
+                            f"3. Modifie le dataframe directement (ex: df = df.drop_duplicates() ou df.fillna(0, inplace=True)).\n"
+                        )
+                        
+                        response = llm.invoke(prompt)
+                        st.session_state.suggested_code = clean_generated_code(response.content)
+                        st.session_state.last_instruction = user_instruction
+                    except Exception as e:
+                        st.error(f"❌ Erreur d'authentification ou de connexion à OpenAI : {e}")
+                        st.session_state.suggested_code = "# Erreur lors de la génération du code. Vérifiez votre clé API."
+                        st.session_state.last_instruction = user_instruction
             
             st.markdown("#### 🐍 Éditeur de code (Ajustez si nécessaire)")
             edited_code = st.text_area("Code Python généré :", value=st.session_state.suggested_code, height=150)
@@ -433,17 +438,21 @@ with tab2:
             
             if gold_instruction:
                 with st.spinner("Génération du code par OpenAI..."):
-                    llm = ChatOpenAI(model=selected_chat_model, temperature=0)
-                    schema_info = f"Colonnes : {list(df_silver.columns)}"
-                    prompt = (
-                        f"Tu es un Data Analyst expert en Pandas.\n"
-                        f"Génère le code brut Python pour agréger un DataFrame nommé `df` selon la consigne : \"{gold_instruction}\"\n"
-                        f"Schéma : {schema_info}\n\n"
-                        f"Le code doit réassigner le résultat à `df` sous forme d'un nouveau DataFrame.\n"
-                        f"Ne renvoie que le code Python brut, sans aucun balisage markdown textuel autre que le code."
-                    )
-                    response = llm.invoke(prompt)
-                    cleaned_gold_code = clean_generated_code(response.content)
+                    try:
+                        llm = ChatOpenAI(model=selected_chat_model, temperature=0)
+                        schema_info = f"Colonnes : {list(df_silver.columns)}"
+                        prompt = (
+                            f"Tu es un Data Analyst expert en Pandas.\n"
+                            f"Génère le code brut Python pour agréger un DataFrame nommé `df` selon la consigne : \"{gold_instruction}\"\n"
+                            f"Schéma : {schema_info}\n\n"
+                            f"Le code doit réassigner le résultat à `df` sous forme d'un nouveau DataFrame.\n"
+                            f"Ne renvoie que le code Python brut, sans aucun balisage markdown textuel autre que le code."
+                        )
+                        response = llm.invoke(prompt)
+                        cleaned_gold_code = clean_generated_code(response.content)
+                    except Exception as e:
+                        st.error(f"❌ Erreur API OpenAI : {e}")
+                        cleaned_gold_code = "# Erreur lors de la génération. Vérifiez votre clé API."
                     
                     edited_gold_code = st.text_area("Ajuster le code d'agrégation :", value=cleaned_gold_code, height=120)
                     
@@ -462,7 +471,7 @@ with tab2:
                             st.success(f"Table consolidée enregistrée dans `{gold_path}`")
                             st.rerun()
                     except Exception as e:
-                        st.error(f"Erreur : {e}")
+                        st.error(f"Erreur Python : {e}")
 
         elif selected_ext == ".json":
             with open(os.path.join(SILVER_DIR, selected_silver), "r", encoding="utf-8") as f:
@@ -472,41 +481,44 @@ with tab2:
             
             if st.button("🥇 Vectoriser et créer l'Index Vectoriel FAISS"):
                 with st.spinner("Calcul des embeddings via OpenAI Cloud..."):
-                    embeddings = OpenAIEmbeddings(model=selected_embed_model)
-                    texts_to_embed = [c["text"] for c in silver_data["chunks"]]
-                    
-                    generated_vectors = embeddings.embed_documents(texts_to_embed)
-                    metadatas = [{"source": silver_data["source_file"], "chunk_id": c["chunk_id"]} for c in silver_data["chunks"]]
-                    
-                    vector_store = FAISS.from_texts(texts=texts_to_embed, embedding=embeddings, metadatas=metadatas)
-                    gold_index_path = os.path.join(GOLD_DIR, "faiss_index")
-                    vector_store.save_local(gold_index_path)
-                    
-                    # Sauvegarde pour PCA 2D/3D
-                    archive_data = []
-                    if os.path.exists(EMBEDDINGS_ARCHIVE_PATH):
-                        try:
-                            with open(EMBEDDINGS_ARCHIVE_PATH, "r", encoding="utf-8") as arch_f:
-                                archive_data = json.load(arch_f)
-                        except Exception:
-                            archive_data = []
+                    try:
+                        embeddings = OpenAIEmbeddings(model=selected_embed_model)
+                        texts_to_embed = [c["text"] for c in silver_data["chunks"]]
+                        
+                        generated_vectors = embeddings.embed_documents(texts_to_embed)
+                        metadatas = [{"source": silver_data["source_file"], "chunk_id": c["chunk_id"]} for c in silver_data["chunks"]]
+                        
+                        vector_store = FAISS.from_texts(texts=texts_to_embed, embedding=embeddings, metadatas=metadatas)
+                        gold_index_path = os.path.join(GOLD_DIR, "faiss_index")
+                        vector_store.save_local(gold_index_path)
+                        
+                        # Sauvegarde pour PCA 2D/3D
+                        archive_data = []
+                        if os.path.exists(EMBEDDINGS_ARCHIVE_PATH):
+                            try:
+                                with open(EMBEDDINGS_ARCHIVE_PATH, "r", encoding="utf-8") as arch_f:
+                                    archive_data = json.load(arch_f)
+                            except Exception:
+                                archive_data = []
+                                
+                        archive_data = [item for item in archive_data if item["source"] != silver_data["source_file"]]
+                        
+                        for idx, chunk in enumerate(silver_data["chunks"]):
+                            archive_data.append({
+                                "source": silver_data["source_file"],
+                                "chunk_id": chunk["chunk_id"],
+                                "text": chunk["text"],
+                                "embedding": generated_vectors[idx]
+                            })
                             
-                    archive_data = [item for item in archive_data if item["source"] != silver_data["source_file"]]
-                    
-                    for idx, chunk in enumerate(silver_data["chunks"]):
-                        archive_data.append({
-                            "source": silver_data["source_file"],
-                            "chunk_id": chunk["chunk_id"],
-                            "text": chunk["text"],
-                            "embedding": generated_vectors[idx]
-                        })
-                        
-                    with open(EMBEDDINGS_ARCHIVE_PATH, "w", encoding="utf-8") as arch_f:
-                        json.dump(archive_data, arch_f, indent=4, ensure_ascii=False)
-                        
-                    add_to_history(selected_silver, "gold", "Indexation vectorielle FAISS OpenAI", f"OpenAIEmbeddings({selected_embed_model})")
-                    st.success("🥇 Index vectoriel FAISS généré avec succès via OpenAI !")
-                    st.rerun()
+                        with open(EMBEDDINGS_ARCHIVE_PATH, "w", encoding="utf-8") as arch_f:
+                            json.dump(archive_data, arch_f, indent=4, ensure_ascii=False)
+                            
+                        add_to_history(selected_silver, "gold", "Indexation vectorielle FAISS OpenAI", f"OpenAIEmbeddings({selected_embed_model})")
+                        st.success("🥇 Index vectoriel FAISS généré avec succès via OpenAI !")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Erreur lors du calcul des embeddings. Vérifiez que votre clé API est valide : {e}")
 
 # =====================================================================
 # TAB 3 : EXPLORATION & PROFILING GOLD
@@ -607,72 +619,78 @@ with tab4:
             
             if user_question:
                 with st.spinner("OpenAI calcule la réponse..."):
-                    llm = ChatOpenAI(model=selected_chat_model, temperature=0)
-                    prompt = (
-                        f"Tu es un analyste de données expert.\n"
-                        f"Tu as accès à un DataFrame Pandas nommé `df`.\n"
-                        f"Schéma : {df_q.dtypes.to_string()}\n\n"
-                        f"Extrait :\n{df_q.head(5).to_string()}\n\n"
-                        f"Consigne : Rédige UNE ligne de code Pandas pour répondre à la question suivante : \"{user_question}\"\n"
-                        f"Enregistre IMPÉRATIVEMENT le résultat final dans une variable nommée `result`.\n"
-                        f"Renvoie uniquement le code Python brut, sans explications."
-                    )
-                    code_resp = llm.invoke(prompt)
-                    exec_code = clean_generated_code(code_resp.content)
-                    
                     try:
-                        local_context = {"df": df_q}
-                        exec(exec_code, {}, local_context)
-                        res = local_context.get("result", "Aucun résultat généré.")
+                        llm = ChatOpenAI(model=selected_chat_model, temperature=0)
+                        prompt = (
+                            f"Tu es un analyste de données expert.\n"
+                            f"Tu as accès à un DataFrame Pandas nommé `df`.\n"
+                            f"Schéma : {df_q.dtypes.to_string()}\n\n"
+                            f"Extrait :\n{df_q.head(5).to_string()}\n\n"
+                            f"Consigne : Rédige UNE ligne de code Pandas pour répondre à la question suivante : \"{user_question}\"\n"
+                            f"Enregistre IMPÉRATIVEMENT le résultat final dans une variable nommée `result`.\n"
+                            f"Renvoie uniquement le code Python brut, sans explications."
+                        )
+                        code_resp = llm.invoke(prompt)
+                        exec_code = clean_generated_code(code_resp.content)
                         
-                        st.markdown("### 🤖 Analyse IA :")
-                        st.info(f"Réponse : {res}")
-                        st.code(exec_code, language="python")
-                    except Exception as e:
-                        st.error(f"Erreur d'évaluation : {e}")
+                        try:
+                            local_context = {"df": df_q}
+                            exec(exec_code, {}, local_context)
+                            res = local_context.get("result", "Aucun résultat généré.")
+                            
+                            st.markdown("### 🤖 Analyse IA :")
+                            st.info(f"Réponse : {res}")
+                            st.code(exec_code, language="python")
+                        except Exception as eval_e:
+                            st.error(f"Erreur d'évaluation du code Python généré : {eval_e}")
+                    except Exception as api_e:
+                        st.error(f"❌ Erreur API OpenAI : Vérifiez que votre clé est valide. Détail : {api_e}")
                         
     else:
         gold_index_path = os.path.join(GOLD_DIR, "faiss_index")
         if not os.path.exists(gold_index_path):
             st.warning("Veuillez d'abord indexer un document textuel dans l'onglet 2.")
         else:
-            embeddings = OpenAIEmbeddings(model=selected_embed_model)
-            vector_store = FAISS.load_local(gold_index_path, embeddings, allow_dangerous_deserialization=True)
-            
-            col_search_param, col_search_q = st.columns([1, 3])
-            with col_search_param:
-                k_chunks = st.slider("Nombre de fragments (k)", 1, 5, 3)
-            with col_search_q:
-                user_text_query = st.text_input("Posez votre question sur les politiques de l'entreprise :")
+            try:
+                embeddings = OpenAIEmbeddings(model=selected_embed_model)
+                vector_store = FAISS.load_local(gold_index_path, embeddings, allow_dangerous_deserialization=True)
                 
-            if user_text_query:
-                retriever = vector_store.as_retriever(search_kwargs={"k": k_chunks})
-                
-                with st.spinner("Recherche dans l'index FAISS..."):
-                    retrieved_docs = retriever.invoke(user_text_query)
-                    context_content = "\n\n".join([doc.page_content for doc in retrieved_docs])
+                col_search_param, col_search_q = st.columns([1, 3])
+                with col_search_param:
+                    k_chunks = st.slider("Nombre de fragments (k)", 1, 5, 3)
+                with col_search_q:
+                    user_text_query = st.text_input("Posez votre question sur les politiques de l'entreprise :")
                     
-                    llm = ChatOpenAI(model=selected_chat_model, temperature=0)
-                    system_prompt = (
-                        "Tu es un assistant RH et juridique d'entreprise. Réponds à la question de manière claire "
-                        "en utilisant uniquement le contexte fourni ci-dessous.\n\n"
-                        "Contexte :\n{context}"
-                    )
-                    prompt_template = ChatPromptTemplate.from_messages([
-                        ("system", system_prompt),
-                        ("human", "{input}"),
-                    ])
+                if user_text_query:
+                    retriever = vector_store.as_retriever(search_kwargs={"k": k_chunks})
                     
-                    chain = prompt_template | llm | StrOutputParser()
-                    response = chain.invoke({"context": context_content, "input": user_text_query})
-                    
-                    st.markdown("### 🤖 Réponse RAG générée :")
-                    st.success(response)
-                    
-                    # Lignage
-                    st.markdown("---")
-                    st.markdown("#### 🔍 Lignage & Traçabilité (Sémantique Gold ➔ Silver ➔ Bronze)")
-                    for idx, doc in enumerate(retrieved_docs):
-                        with st.expander(f"Fragment #{idx+1} | Source : {doc.metadata['source']}"):
-                            st.info(doc.page_content)
-                            st.caption(f"Fichier original (Bronze) : `{doc.metadata['source']}`")
+                    with st.spinner("Recherche dans l'index FAISS et génération LLM..."):
+                        retrieved_docs = retriever.invoke(user_text_query)
+                        context_content = "\n\n".join([doc.page_content for doc in retrieved_docs])
+                        
+                        llm = ChatOpenAI(model=selected_chat_model, temperature=0)
+                        system_prompt = (
+                            "Tu es un assistant RH et juridique d'entreprise. Réponds à la question de manière claire "
+                            "en utilisant uniquement le contexte fourni ci-dessous.\n\n"
+                            "Contexte :\n{context}"
+                        )
+                        prompt_template = ChatPromptTemplate.from_messages([
+                            ("system", system_prompt),
+                            ("human", "{input}"),
+                        ])
+                        
+                        chain = prompt_template | llm | StrOutputParser()
+                        response = chain.invoke({"context": context_content, "input": user_text_query})
+                        
+                        st.markdown("### 🤖 Réponse RAG générée :")
+                        st.success(response)
+                        
+                        # Lignage
+                        st.markdown("---")
+                        st.markdown("#### 🔍 Lignage & Traçabilité (Sémantique Gold ➔ Silver ➔ Bronze)")
+                        for idx, doc in enumerate(retrieved_docs):
+                            with st.expander(f"Fragment #{idx+1} | Source : {doc.metadata['source']}"):
+                                st.info(doc.page_content)
+                                st.caption(f"Fichier original (Bronze) : `{doc.metadata['source']}`")
+            except Exception as e:
+                st.error(f"❌ Erreur lors du chargement du modèle RAG ou de l'API OpenAI. Vérifiez votre clé : {e}")

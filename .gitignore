@@ -2,3 +2,4 @@
 venv/
 .env
 local_medallion_lakehouse/
+img/
